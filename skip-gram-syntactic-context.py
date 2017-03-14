@@ -1,6 +1,7 @@
 import string
 import numpy as np
 import random
+import tensorflow as tf
 import conllu
 from conllu.parser import parse_tree
 
