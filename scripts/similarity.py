@@ -9,15 +9,15 @@ def read_embedding(path):
 
     embedding = {}
     dim = None
-
     for row in open(path):
 
-        word, *vector = row.split()
+        s = row.split()
+        word = s[0]
+        vector = s[1:]
         embedding[word] = [float(x) for x in vector]
-
         if dim and len(vector) != dim:
-
-            print("Inconsistent embedding dimensions!", file = sys.stderr)
+            file = sys.stderr
+            print "Inconsistent embedding dimensions!", file
             sys.exit(1)
 
         dim = len(vector)
@@ -35,14 +35,26 @@ parser.add_argument("-w", "--words", dest = "pairs_path",
 
 args = parser.parse_args()
 
-
 E, dim = read_embedding(args.emb_path)
 pairs = pd.read_csv(args.pairs_path, index_col = "id")
 
-pairs["similarity"] = [np.dot(E[w1], E[w2])
-    for w1, w2 in zip(pairs.word1, pairs.word2)]
+output = []
+count = 0
+for w1, w2 in zip(pairs.word1, pairs.word2):
+    w1 = w1.lower()
+    if w1 not in E:
+        w1 = "UNK"
+        count += 1
+    w2 = w2.lower()
+    if w2 not in E:
+        w2 = "UNK"
+        count += 1
+    output.append(np.dot(E[w1], E[w2]))
+
+pairs["similarity"] = output
 
 del pairs["word1"], pairs["word2"]
-
-print("Detected a", dim, "dimension embedding.", file = sys.stderr)
-pairs.to_csv(sys.stdout)
+print "UNK:", count
+file = sys.stderr
+print "Detected a", dim, "dimension embedding.", file
+pairs.to_csv("prediction.csv")
